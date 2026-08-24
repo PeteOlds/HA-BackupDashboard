@@ -98,7 +98,7 @@ Notes:
 - Local agents: `backup.local`, `hassio.local`; remote = other agent IDs (network mounts, `cloud.cloud`).
 - `backup/info` carries the full backup list, so one call serves both health and inventory.
 - **Free storage is not exposed** by the backup API; the RAG "free <1 GB" input is unpopulated (see PRD §5.1). A storage source (e.g. system health) would be needed to enable it.
-- **Live updates:** `backup/info` reflects manager `state`; subscribe to HA backup events if available, otherwise re-fetch `backup/info` after actions (the card already reloads on every action).
+- **Live updates:** the card reloads `backup/info` after every management action, and additionally polls it on a `refresh_interval` (default 30s, `0` to disable) while mounted. A HA backup *event subscription* would be preferable if/when its command is confirmed; polling is the robust fallback and is already implemented.
 
 ## 10. Requirement Traceability
 

@@ -92,6 +92,7 @@ The card is configured via **YAML only** in v1 (the visual config editor is defe
 - `threshold_green_hours` (optional, default `48`): maximum age in hours for a Green RAG status.
 - `threshold_amber_days` (optional, default `7`): maximum age in days for an Amber RAG status (older than this is Red).
 - `threshold_free_gb` (optional, default `1`): free-storage threshold in GB below which RAG is Red.
+- `refresh_interval` (optional, default `30`): seconds between background refreshes of `backup/info` while the card is on screen; `0` disables polling.
 
 All thresholds are evaluated by the RAG engine and default to the values above when omitted.
 

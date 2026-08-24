@@ -46,6 +46,24 @@ export class BackupCard extends LitElement {
 
   @state() private _backupPassword = "";
 
+  private _pollTimer?: number;
+
+  public connectedCallback(): void {
+    super.connectedCallback();
+    const sec = this._config?.refresh_interval ?? 30;
+    if (sec > 0 && this._pollTimer === undefined) {
+      this._pollTimer = window.setInterval(() => void this._refresh(), sec * 1000);
+    }
+  }
+
+  public disconnectedCallback(): void {
+    super.disconnectedCallback();
+    if (this._pollTimer !== undefined) {
+      window.clearInterval(this._pollTimer);
+      this._pollTimer = undefined;
+    }
+  }
+
   public setConfig(config: BackupCardConfig): void {
     this._config = config;
   }
@@ -98,6 +116,24 @@ export class BackupCard extends LitElement {
       status: "error",
       error: err instanceof Error ? err.message : String(err),
     };
+  }
+
+  // Lightweight refresh used by the poll timer; never clobbers an in-flight
+  // action (creating/restoring) or an error state, and swallows transient
+  // poll failures to avoid UI flicker.
+  private async _refresh(): Promise<void> {
+    if (!this.hass || this._state.status !== "ready") return;
+    try {
+      const { info, backups } = await this._fetch();
+      this._state = {
+        ...this._state,
+        info,
+        backups,
+        rag: computeRag(info, this._thresholds),
+      };
+    } catch {
+      /* transient poll error — keep last known state */
+    }
   }
 
   private _navigate(path: string): void {
