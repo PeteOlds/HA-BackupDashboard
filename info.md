@@ -2,7 +2,7 @@
 
 A custom Home Assistant Lovelace card for backup status & management.
 
-See the [README](https://github.com/example/lovelace-backup-card) for install and
+See the [README](https://github.com/PeteOlds/HA-BackupDashboard) for install and
 configuration, and `PRD HA Backup Card.md` / `DESIGN.md` for the full spec.
 
 ```yaml

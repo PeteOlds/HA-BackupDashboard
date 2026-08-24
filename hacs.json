@@ -1,5 +1,6 @@
 {
   "name": "Backup Card",
   "render_readme": true,
+  "filename": "backup-card.js",
   "hacs": "1.0.0"
 }
