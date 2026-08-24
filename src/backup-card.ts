@@ -1,0 +1,359 @@
+import { LitElement, html, css, TemplateResult, PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import {
+  BackupCardConfig,
+  BackupEntry,
+  BackupInfo,
+  CardState,
+  RagStatus,
+  RagThresholds,
+  HomeAssistant,
+  isLocalAgent,
+} from "./types";
+import { computeRag, DEFAULT_THRESHOLDS, ragLabel } from "./rag";
+import {
+  getBackupInfo,
+  generateBackup,
+  deleteBackup,
+  restoreBackup,
+} from "./websocket";
+import "./confirm-dialog";
+
+type SortKey = "name" | "date" | "size";
+type ConfirmTarget = { kind: "delete" | "restore"; slug: string; name: string } | null;
+
+const PAGE_SIZE = 10;
+
+@customElement("backup-card")
+export class BackupCard extends LitElement {
+  @property({ attribute: false }) public hass?: HomeAssistant;
+
+  @state() private _config?: BackupCardConfig;
+
+  @state() private _state: CardState = { status: "idle" };
+
+  @state() private _sortKey: SortKey = "date";
+
+  @state() private _sortDir: "asc" | "desc" = "desc";
+
+  @state() private _page = 0;
+
+  @state() private _confirm: ConfirmTarget = null;
+
+  @state() private _backupModalOpen = false;
+
+  @state() private _backupPartial = false;
+
+  @state() private _backupPassword = "";
+
+  public setConfig(config: BackupCardConfig): void {
+    this._config = config;
+  }
+
+  public getCardSize(): number {
+    return 8;
+  }
+
+  private get _isAdmin(): boolean {
+    return this.hass?.user?.is_admin ?? false;
+  }
+
+  private get _thresholds(): RagThresholds {
+    return {
+      greenHours: this._config?.threshold_green_hours ?? DEFAULT_THRESHOLDS.greenHours,
+      amberDays: this._config?.threshold_amber_days ?? DEFAULT_THRESHOLDS.amberDays,
+      freeGb: this._config?.threshold_free_gb ?? DEFAULT_THRESHOLDS.freeGb,
+    };
+  }
+
+  protected updated(changed: PropertyValues): void {
+    if (changed.has("hass") && this.hass && this._state.status === "idle") {
+      void this._load();
+    }
+  }
+
+  private async _fetch(): Promise<{ info: BackupInfo; backups: BackupEntry[] }> {
+    const { info, backups } = await getBackupInfo(this.hass!);
+    return { info, backups };
+  }
+
+  private async _load(): Promise<void> {
+    if (!this.hass) return;
+    this._state = { ...this._state, status: "loading" };
+    try {
+      const { info, backups } = await this._fetch();
+      this._state = {
+        status: "ready",
+        info,
+        backups,
+        rag: computeRag(info, this._thresholds),
+      };
+    } catch (err) {
+      this._setError(err);
+    }
+  }
+
+  private _setError(err: unknown): void {
+    this._state = {
+      status: "error",
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+
+  private _navigate(path: string): void {
+    this.dispatchEvent(
+      new CustomEvent("navigate", { detail: { path }, bubbles: true, composed: true }),
+    );
+  }
+
+  private _sorted(backups: BackupEntry[]): BackupEntry[] {
+    const dir = this._sortDir === "asc" ? 1 : -1;
+    const key = this._sortKey;
+    return [...backups].sort((a, b) => {
+      let r = 0;
+      if (key === "name") r = a.name.localeCompare(b.name);
+      else if (key === "date") r = new Date(a.date).getTime() - new Date(b.date).getTime();
+      else if (key === "size") r = a.size - b.size;
+      return r * dir;
+    });
+  }
+
+  private _toggleSort(key: SortKey): void {
+    if (this._sortKey === key) {
+      this._sortDir = this._sortDir === "asc" ? "desc" : "asc";
+    } else {
+      this._sortKey = key;
+      this._sortDir = key === "name" ? "asc" : "desc";
+    }
+    this._page = 0;
+  }
+
+  private async _doBackup(): Promise<void> {
+    if (!this.hass) return;
+    const partial = this._backupPartial;
+    const password = this._backupPassword || undefined;
+    this._backupModalOpen = false;
+    this._state = { ...this._state, status: "creating" };
+    try {
+      await generateBackup(this.hass, { partial, password });
+      const { info, backups } = await this._fetch();
+      this._state = { status: "ready", info, backups, rag: computeRag(info, this._thresholds) };
+    } catch (err) {
+      this._setError(err);
+    }
+  }
+
+  private async _doConfirmedAction(): Promise<void> {
+    if (!this.hass || !this._confirm) return;
+    const { kind, slug } = this._confirm;
+    this._state = {
+      ...this._state,
+      status: kind === "restore" ? "restoring" : "creating",
+    };
+    const target = this._confirm;
+    this._confirm = null;
+    try {
+      if (kind === "delete") {
+        await deleteBackup(this.hass, slug);
+      } else {
+        const entry = (this._state.backups ?? []).find((b) => b.slug === slug);
+        await restoreBackup(this.hass, slug, entry?.agent_ids[0]);
+      }
+      const { info, backups } = await this._fetch();
+      this._state = { status: "ready", info, backups, rag: computeRag(info, this._thresholds) };
+      void target;
+    } catch (err) {
+      this._setError(err);
+    }
+  }
+
+  protected render(): TemplateResult | void {
+    if (!this._config) return html``;
+    const s = this._state;
+
+    if (s.status === "loading") return html`<p>Loading backups…</p>`;
+    if (s.status === "error") {
+      return html`<ha-card>
+        <p class="error">Error: ${s.error}</p>
+        <button @click="${() => void this._load()}">Retry</button>
+      </ha-card>`;
+    }
+    if (s.status === "idle" || !s.info) return html``;
+
+    const busy = s.status === "creating" || s.status === "restoring";
+    const sorted = this._sorted(s.backups ?? []);
+    const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    const page = Math.min(this._page, pages - 1);
+    const slice = sorted.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+    return html`
+      <ha-card>
+        <div class="header">
+          <span class="rag rag-${s.rag}" role="status" aria-live="polite"
+            >${ragLabel(s.rag as RagStatus)}</span
+          >
+          <h2>${this._config.name ?? "Backups"}</h2>
+          <div class="spacer"></div>
+          ${this._isAdmin
+            ? html`<button @click="${() => (this._backupModalOpen = true)}">Backup Now</button>
+                <button @click="${() => this._navigate("/config/backup")}">Open Location</button>`
+            : html`<span class="readonly">Read-only</span>`}
+        </div>
+
+        <div class="metrics">
+          <div><span class="k">Last backup</span><span>${s.info.last_backup ?? "none"}</span></div>
+          <div>
+            <span class="k">Backups</span
+            ><span>${s.backups?.length ?? 0}</span>
+          </div>
+          <div>
+            <span class="k">Schedule</span>
+            <span
+              >${s.info.schedule?.next_run
+                ? `Next: ${new Date(s.info.schedule.next_run).toLocaleString()}`
+                : "n/a"}</span
+            >
+            ${this._isAdmin
+              ? html`<button class="link" @click="${() => this._navigate("/config/backup")}"
+                  >Change</button
+                >`
+              : ""}
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th @click="${() => this._toggleSort("name")}">Name ${this._arrow("name")}</th>
+              <th>Type</th>
+              <th @click="${() => this._toggleSort("date")}">Created ${this._arrow("date")}</th>
+              <th @click="${() => this._toggleSort("size")}">Size ${this._arrow("size")}</th>
+              <th>Location</th>
+              ${this._isAdmin ? html`<th>Actions</th>` : ""}
+            </tr>
+          </thead>
+          <tbody>
+            ${slice.map(
+              (b) => html`
+                <tr>
+                  <td>${b.name}</td>
+                  <td>${b.automatic ? "Automatic" : "Manual"}</td>
+                  <td title="${b.date}">${relativeTime(b.date)}</td>
+                  <td>${formatSize(b.size)}</td>
+                  <td>${(locationBadges(b.agent_ids)).map((l) => html`<span class="badge">${l}</span>`)}</td>
+                  ${this._isAdmin
+                    ? html`<td>
+                        <button class="link danger" @click="${() => (this._confirm = { kind: "restore", slug: b.slug, name: b.name })}">Restore</button>
+                        <button class="link danger" @click="${() => (this._confirm = { kind: "delete", slug: b.slug, name: b.name })}">Delete</button>
+                      </td>`
+                    : ""}
+                </tr>
+              `,
+            )}
+          </tbody>
+        </table>
+
+        <div class="pager">
+          <button ?disabled="${page === 0}" @click="${() => (this._page = page - 1)}">Prev</button>
+          <span>${page + 1} / ${pages}</span>
+          <button ?disabled="${page >= pages - 1}" @click="${() => (this._page = page + 1)}">Next</button>
+        </div>
+
+        ${busy
+          ? html`<div class="overlay">${s.status === "restoring" ? "Restoring…" : "Creating Backup…"}</div>`
+          : ""}
+      </ha-card>
+
+      ${this._backupModalOpen
+        ? html`<div class="overlay" @click="${(e: Event) => { if (e.target === e.currentTarget) this._backupModalOpen = false; }}">
+            <div class="modal" role="dialog" aria-modal="true">
+              <h3>Backup Now</h3>
+              <label><input type="checkbox" .checked="${this._backupPartial}" @change="${(e: Event) => (this._backupPartial = (e.target as HTMLInputElement).checked)}"}
+                /> Partial backup</label>
+              <label>Password (optional)<input type="password" .value="${this._backupPassword}" @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"}
+                /></label>
+              <div class="actions">
+                <button @click="${() => (this._backupModalOpen = false)}">Cancel</button>
+                <button class="primary" @click="${() => void this._doBackup()}">Create</button>
+              </div>
+            </div>
+          </div>`
+        : ""}
+
+      <backup-confirm-dialog
+        .open="${this._confirm !== null}"
+        title="${this._confirm ? `${this._confirm.kind === "restore" ? "Restore" : "Delete"} backup` : ""}"
+        message="${this._confirm ? `Are you sure you want to ${this._confirm.kind} "${this._confirm.name}"? This cannot be undone.` : ""}"
+        confirmLabel="Confirm"
+        confirmColor="${this._confirm?.kind === "restore" ? "danger" : "danger"}"
+        @confirm="${() => void this._doConfirmedAction()}"
+        @cancel="${() => (this._confirm = null)}"
+      ></backup-confirm-dialog>
+    `;
+  }
+
+  private _arrow(key: SortKey): string {
+    if (this._sortKey !== key) return "";
+    return this._sortDir === "asc" ? "▲" : "▼";
+  }
+
+  static styles = css`
+    .header { display: flex; align-items: center; gap: 0.5rem; }
+    .spacer { flex: 1; }
+    .rag-red { color: var(--error-color); font-weight: 600; }
+    .rag-amber { color: var(--warning-color); font-weight: 600; }
+    .rag-green { color: var(--success-color); font-weight: 600; }
+    .error { color: var(--error-color); }
+    .readonly { color: var(--secondary-text-color); font-style: italic; }
+    .metrics { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.5rem 0; }
+    .metrics .k { display: block; font-size: 0.75rem; color: var(--secondary-text-color); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--divider-color); }
+    th { cursor: pointer; user-select: none; }
+    .badge { display: inline-block; margin-right: 0.25rem; padding: 0 0.4rem; border-radius: 0.5rem; background: var(--secondary-background-color); font-size: 0.75rem; }
+    .link { background: none; border: none; color: var(--primary-color); cursor: pointer; padding: 0; margin-right: 0.5rem; }
+    .link.danger { color: var(--error-color); }
+    button { cursor: pointer; padding: 0.35rem 0.8rem; border-radius: 4px; border: 1px solid var(--divider-color); background: transparent; color: var(--primary-text-color); }
+    .primary { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+    .pager { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .modal { background: var(--card-background-color); color: var(--primary-text-color); padding: 1rem 1.25rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.5rem; max-width: 90vw; }
+    .modal label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; }
+    .actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+    .modal .primary, .overlay > div.primary { color: #fff; }
+    @media (max-width: 480px) {
+      .metrics { flex-direction: column; }
+      table th:nth-child(4), table td:nth-child(4) { display: none; }
+    }
+  `;
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return "just now";
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return `${Math.floor(d / 30)}mo ago`;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  return `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
+function locationBadges(ids: string[]): string[] {
+  const local = ids.some((id) => isLocalAgent(id));
+  const remote = ids.some((id) => !isLocalAgent(id));
+  const out: string[] = [];
+  if (local) out.push("Local");
+  if (remote) out.push("Remote");
+  return out.length ? out : ["Local"];
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "backup-card": BackupCard;
+  }
+}

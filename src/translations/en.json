@@ -1,0 +1,16 @@
+{
+  "card": {
+    "title": "Backups",
+    "loading": "Loading backups…",
+    "error": "Error loading backups",
+    "healthy": "Healthy",
+    "warning": "Warning",
+    "critical": "Critical",
+    "last_backup": "Last backup",
+    "count": "Backups",
+    "backup_now": "Backup Now",
+    "delete": "Delete",
+    "restore": "Restore",
+    "open_location": "Open Backup Manager"
+  }
+}
