@@ -1,5 +1,6 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { localize } from "./localize";
 
 @customElement("backup-confirm-dialog")
 export class BackupConfirmDialog extends LitElement {
@@ -9,7 +10,7 @@ export class BackupConfirmDialog extends LitElement {
 
   @property() public message = "";
 
-  @property() public confirmLabel = "Confirm";
+  @property() public confirmLabel = localize("card.confirm");
 
   @property() public confirmColor: "danger" | "primary" = "danger";
 
@@ -21,7 +22,7 @@ export class BackupConfirmDialog extends LitElement {
     this.dispatchEvent(new CustomEvent("confirm"));
   }
 
-  protected render() {
+  protected render(): TemplateResult {
     if (!this.open) return html``;
     return html`
       <div
@@ -34,7 +35,7 @@ export class BackupConfirmDialog extends LitElement {
           <h3>${this.title}</h3>
           <p>${this.message}</p>
           <div class="actions">
-            <button class="cancel" @click="${this._cancel}">Cancel</button>
+            <button class="cancel" @click="${this._cancel}">${localize("card.cancel")}</button>
             <button class="confirm ${this.confirmColor}" @click="${this._confirm}">
               ${this.confirmLabel}
             </button>

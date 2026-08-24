@@ -1,4 +1,5 @@
 import { BackupInfo, RagStatus, RagThresholds } from "./types";
+import { localize } from "./localize";
 
 export const DEFAULT_THRESHOLDS: RagThresholds = {
   greenHours: 48,
@@ -37,5 +38,9 @@ export function computeRag(
 }
 
 export function ragLabel(r: RagStatus): string {
-  return r === "green" ? "Healthy" : r === "amber" ? "Warning" : "Critical";
+  return r === "green"
+    ? localize("card.healthy")
+    : r === "amber"
+      ? localize("card.warning")
+      : localize("card.critical");
 }

@@ -11,6 +11,7 @@ import {
   isLocalAgent,
 } from "./types";
 import { computeRag, DEFAULT_THRESHOLDS, ragLabel } from "./rag";
+import { localize } from "./localize";
 import {
   getBackupInfo,
   generateBackup,
@@ -206,12 +207,13 @@ export class BackupCard extends LitElement {
   protected render(): TemplateResult | void {
     if (!this._config) return html``;
     const s = this._state;
+    const L = localize;
 
-    if (s.status === "loading") return html`<p>Loading backups…</p>`;
+    if (s.status === "loading") return html`<p>${L("card.loading")}</p>`;
     if (s.status === "error") {
       return html`<ha-card>
-        <p class="error">Error: ${s.error}</p>
-        <button @click="${() => void this._load()}">Retry</button>
+        <p class="error">${L("card.error")}: ${s.error}</p>
+        <button @click="${() => void this._load()}">${L("card.retry")}</button>
       </ha-card>`;
     }
     if (s.status === "idle" || !s.info) return html``;
@@ -228,30 +230,30 @@ export class BackupCard extends LitElement {
           <span class="rag rag-${s.rag}" role="status" aria-live="polite"
             >${ragLabel(s.rag as RagStatus)}</span
           >
-          <h2>${this._config.name ?? "Backups"}</h2>
+          <h2>${this._config.name ?? L("card.title")}</h2>
           <div class="spacer"></div>
           ${this._isAdmin
-            ? html`<button @click="${() => (this._backupModalOpen = true)}">Backup Now</button>
-                <button @click="${() => this._navigate("/config/backup")}">Open Location</button>`
-            : html`<span class="readonly">Read-only</span>`}
+            ? html`              <button @click="${() => (this._backupModalOpen = true)}">${L("card.backup_now")}</button>
+                <button @click="${() => this._navigate("/config/backup")}">${L("card.open_location")}</button>`
+            : html`<span class="readonly">${L("card.readonly")}</span>`}
         </div>
 
         <div class="metrics">
-          <div><span class="k">Last backup</span><span>${s.info.last_backup ?? "none"}</span></div>
+          <div><span class="k">${L("card.last_backup")}</span><span>${s.info.last_backup ?? L("card.na")}</span></div>
           <div>
-            <span class="k">Backups</span
+            <span class="k">${L("card.count")}</span
             ><span>${s.backups?.length ?? 0}</span>
           </div>
           <div>
-            <span class="k">Schedule</span>
+            <span class="k">${L("card.schedule")}</span>
             <span
               >${s.info.schedule?.next_run
-                ? `Next: ${new Date(s.info.schedule.next_run).toLocaleString()}`
-                : "n/a"}</span
+                ? `${L("card.next")}: ${new Date(s.info.schedule.next_run).toLocaleString()}`
+                : L("card.na")}</span
             >
             ${this._isAdmin
               ? html`<button class="link" @click="${() => this._navigate("/config/backup")}"
-                  >Change</button
+                  >${L("card.change")}</button
                 >`
               : ""}
           </div>
@@ -260,12 +262,12 @@ export class BackupCard extends LitElement {
         <table>
           <thead>
             <tr>
-              <th @click="${() => this._toggleSort("name")}">Name ${this._arrow("name")}</th>
-              <th>Type</th>
-              <th @click="${() => this._toggleSort("date")}">Created ${this._arrow("date")}</th>
-              <th @click="${() => this._toggleSort("size")}">Size ${this._arrow("size")}</th>
-              <th>Location</th>
-              ${this._isAdmin ? html`<th>Actions</th>` : ""}
+              <th @click="${() => this._toggleSort("name")}">${L("card.name")} ${this._arrow("name")}</th>
+              <th>${L("card.type")}</th>
+              <th @click="${() => this._toggleSort("date")}">${L("card.created")} ${this._arrow("date")}</th>
+              <th @click="${() => this._toggleSort("size")}">${L("card.size")} ${this._arrow("size")}</th>
+              <th>${L("card.location")}</th>
+              ${this._isAdmin ? html`<th>${L("card.actions")}</th>` : ""}
             </tr>
           </thead>
           <tbody>
@@ -273,14 +275,14 @@ export class BackupCard extends LitElement {
               (b) => html`
                 <tr>
                   <td>${b.name}</td>
-                  <td>${b.automatic ? "Automatic" : "Manual"}</td>
+                  <td>${b.automatic ? L("card.automatic") : L("card.manual")}</td>
                   <td title="${b.date}">${relativeTime(b.date)}</td>
                   <td>${formatSize(b.size)}</td>
                   <td>${(locationBadges(b.agent_ids)).map((l) => html`<span class="badge">${l}</span>`)}</td>
                   ${this._isAdmin
                     ? html`<td>
-                        <button class="link danger" @click="${() => (this._confirm = { kind: "restore", slug: b.slug, name: b.name })}">Restore</button>
-                        <button class="link danger" @click="${() => (this._confirm = { kind: "delete", slug: b.slug, name: b.name })}">Delete</button>
+                        <button class="link danger" @click="${() => (this._confirm = { kind: "restore", slug: b.slug, name: b.name })}">${L("card.restore")}</button>
+                        <button class="link danger" @click="${() => (this._confirm = { kind: "delete", slug: b.slug, name: b.name })}">${L("card.delete")}</button>
                       </td>`
                     : ""}
                 </tr>
@@ -290,27 +292,27 @@ export class BackupCard extends LitElement {
         </table>
 
         <div class="pager">
-          <button ?disabled="${page === 0}" @click="${() => (this._page = page - 1)}">Prev</button>
+          <button ?disabled="${page === 0}" @click="${() => (this._page = page - 1)}">${L("card.prev")}</button>
           <span>${page + 1} / ${pages}</span>
-          <button ?disabled="${page >= pages - 1}" @click="${() => (this._page = page + 1)}">Next</button>
+          <button ?disabled="${page >= pages - 1}" @click="${() => (this._page = page + 1)}">${L("card.pager_next")}</button>
         </div>
 
         ${busy
-          ? html`<div class="overlay">${s.status === "restoring" ? "Restoring…" : "Creating Backup…"}</div>`
+          ? html`<div class="overlay">${s.status === "restoring" ? L("card.restoring") : L("card.creating")}</div>`
           : ""}
       </ha-card>
 
       ${this._backupModalOpen
         ? html`<div class="overlay" @click="${(e: Event) => { if (e.target === e.currentTarget) this._backupModalOpen = false; }}">
             <div class="modal" role="dialog" aria-modal="true">
-              <h3>Backup Now</h3>
-              <label><input type="checkbox" .checked="${this._backupPartial}" @change="${(e: Event) => (this._backupPartial = (e.target as HTMLInputElement).checked)}"}
-                /> Partial backup</label>
-              <label>Password (optional)<input type="password" .value="${this._backupPassword}" @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"}
+              <h3>${L("card.modal_title")}</h3>
+              <label><input type="checkbox" .checked="${this._backupPartial}" @change="${(e: Event) => (this._backupPartial = (e.target as HTMLInputElement).checked)}"
+                /> ${L("card.partial")}</label>
+              <label>${L("card.password")}<input type="password" .value="${this._backupPassword}" @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"
                 /></label>
               <div class="actions">
-                <button @click="${() => (this._backupModalOpen = false)}">Cancel</button>
-                <button class="primary" @click="${() => void this._doBackup()}">Create</button>
+                <button @click="${() => (this._backupModalOpen = false)}">${L("card.cancel")}</button>
+                <button class="primary" @click="${() => void this._doBackup()}">${L("card.create")}</button>
               </div>
             </div>
           </div>`
@@ -318,10 +320,10 @@ export class BackupCard extends LitElement {
 
       <backup-confirm-dialog
         .open="${this._confirm !== null}"
-        title="${this._confirm ? `${this._confirm.kind === "restore" ? "Restore" : "Delete"} backup` : ""}"
-        message="${this._confirm ? `Are you sure you want to ${this._confirm.kind} "${this._confirm.name}"? This cannot be undone.` : ""}"
-        confirmLabel="Confirm"
-        confirmColor="${this._confirm?.kind === "restore" ? "danger" : "danger"}"
+        title="${this._confirm ? (this._confirm.kind === "restore" ? L("card.confirm_restore_title") : L("card.confirm_delete_title")) : ""}"
+        message="${this._confirm ? L("card.confirm_msg") : ""}"
+        confirmLabel="${L("card.confirm")}"
+        confirmColor="danger"
         @confirm="${() => void this._doConfirmedAction()}"
         @cancel="${() => (this._confirm = null)}"
       ></backup-confirm-dialog>
