@@ -634,7 +634,7 @@ const Xt = {
   name: "Name",
   type: "Type",
   created: "Created",
-  size: "Size",
+  file_size: "File Size (Mb)",
   location: "Location",
   actions: "Actions",
   automatic: "Automatic",
@@ -649,6 +649,7 @@ const Xt = {
   retry: "Retry",
   creating: "Creating Backup…",
   restoring: "Restoring…",
+  deleting: "Backup Deleted",
   cancel: "Cancel",
   create: "Create",
   partial: "Partial backup",
@@ -912,7 +913,7 @@ let f = class extends O {
     s.has("hass") && this.hass && this._state.status === "idle" && this._load();
   }
   static async getConfigElement() {
-    return await import("./editor-wwdutBVg.js"), document.createElement("backup-card-editor");
+    return await import("./editor-D3Sl1EPU.js"), document.createElement("backup-card-editor");
   }
   static getStubConfig() {
     return {};
@@ -1014,7 +1015,7 @@ let f = class extends O {
     const { kind: s, slug: t } = this._confirm;
     this._state = {
       ...this._state,
-      status: s === "restore" ? "restoring" : "creating"
+      status: s === "restore" ? "restoring" : "deleting"
     }, this._confirm, this._confirm = null;
     try {
       if (s === "delete")
@@ -1040,7 +1041,7 @@ let f = class extends O {
         <button @click="${() => void this._load()}">${t("card.retry")}</button>
       </ha-card>`;
     if (s.status === "idle" || !s.info) return p``;
-    const e = s.status === "creating" || s.status === "restoring", r = this._sorted((c = s.backups) != null ? c : []), i = Math.max(1, Math.ceil(r.length / q)), n = Math.min(this._page, i - 1), a = r.slice(n * q, n * q + q);
+    const e = s.status === "creating" || s.status === "restoring" || s.status === "deleting", r = this._sorted((c = s.backups) != null ? c : []), i = Math.max(1, Math.ceil(r.length / q)), n = Math.min(this._page, i - 1), a = r.slice(n * q, n * q + q);
     return p`
       <ha-card>
         <div class="header">
@@ -1074,10 +1075,10 @@ let f = class extends O {
           <thead>
             <tr>
               <th @click="${() => this._toggleSort("name")}">${t("card.name")} ${this._arrow("name")}</th>
-              <th>${t("card.type")}</th>
               <th @click="${() => this._toggleSort("date")}">${t("card.created")} ${this._arrow("date")}</th>
-              <th @click="${() => this._toggleSort("size")}">${t("card.size")} ${this._arrow("size")}</th>
+              <th @click="${() => this._toggleSort("size")}">${t("card.file_size")} ${this._arrow("size")}</th>
               <th>${t("card.location")}</th>
+              <th>${t("card.type")}</th>
               ${this._isAdmin ? p`<th>${t("card.actions")}</th>` : ""}
             </tr>
           </thead>
@@ -1086,10 +1087,10 @@ let f = class extends O {
       (l) => p`
                 <tr>
                   <td>${l.name}</td>
-                  <td>${l.automatic ? t("card.automatic") : t("card.manual")}</td>
                   <td title="${l.date}">${ge(l.date)}</td>
                   <td>${fe(l.size)}</td>
                   <td>${me(l.agent_ids).map(($) => p`<span class="badge">${$}</span>`)}</td>
+                  <td>${l.automatic ? t("card.automatic") : t("card.manual")}</td>
                   ${this._isAdmin ? p`<td>
                         <button class="link danger" @click="${() => this._confirm = { kind: "restore", slug: l.slug, name: l.name }}">${t("card.restore")}</button>
                         <button class="link danger" @click="${() => this._confirm = { kind: "delete", slug: l.slug, name: l.name }}">${t("card.delete")}</button>
@@ -1106,7 +1107,7 @@ let f = class extends O {
           <button ?disabled="${n >= i - 1}" @click="${() => this._page = n + 1}">${t("card.pager_next")}</button>
         </div>
 
-        ${e ? p`<div class="overlay">${s.status === "restoring" ? t("card.restoring") : t("card.creating")}</div>` : ""}
+        ${e ? p`<div class="overlay">${s.status === "restoring" ? t("card.restoring") : s.status === "deleting" ? t("card.deleting") : t("card.creating")}</div>` : ""}
       </ha-card>
 
       ${this._backupModalOpen ? p`<div class="overlay" @click="${(l) => {
@@ -1179,7 +1180,7 @@ f.styles = At`
     .modal .primary, .overlay > div.primary { color: #fff; }
     @media (max-width: 480px) {
       .metrics { flex-direction: column; }
-      table th:nth-child(4), table td:nth-child(4) { display: none; }
+      table th:nth-child(3), table td:nth-child(3) { display: none; }
     }
   `;
 m([
@@ -1229,7 +1230,7 @@ function ge(s) {
   return r < 30 ? `${r}d ago` : `${Math.floor(r / 30)}mo ago`;
 }
 function fe(s) {
-  return s >= 1024 ** 3 ? `${(s / 1024 ** 3).toFixed(1)} GB` : `${Math.round(s / 1024 ** 2)} MB`;
+  return `${Math.round(s / 1024 ** 2)} MB`;
 }
 function me(s) {
   const t = s.some((i) => I(i)), e = s.some((i) => !I(i)), r = [];

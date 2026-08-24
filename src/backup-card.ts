@@ -232,7 +232,7 @@ export class BackupCard extends LitElement {
     const { kind, slug } = this._confirm;
     this._state = {
       ...this._state,
-      status: kind === "restore" ? "restoring" : "creating",
+      status: kind === "restore" ? "restoring" : "deleting",
     };
     const target = this._confirm;
     this._confirm = null;
@@ -265,7 +265,7 @@ export class BackupCard extends LitElement {
     }
     if (s.status === "idle" || !s.info) return html``;
 
-    const busy = s.status === "creating" || s.status === "restoring";
+    const busy = s.status === "creating" || s.status === "restoring" || s.status === "deleting";
     const sorted = this._sorted(s.backups ?? []);
     const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
     const page = Math.min(this._page, pages - 1);
@@ -310,10 +310,10 @@ export class BackupCard extends LitElement {
           <thead>
             <tr>
               <th @click="${() => this._toggleSort("name")}">${L("card.name")} ${this._arrow("name")}</th>
-              <th>${L("card.type")}</th>
               <th @click="${() => this._toggleSort("date")}">${L("card.created")} ${this._arrow("date")}</th>
-              <th @click="${() => this._toggleSort("size")}">${L("card.size")} ${this._arrow("size")}</th>
+              <th @click="${() => this._toggleSort("size")}">${L("card.file_size")} ${this._arrow("size")}</th>
               <th>${L("card.location")}</th>
+              <th>${L("card.type")}</th>
               ${this._isAdmin ? html`<th>${L("card.actions")}</th>` : ""}
             </tr>
           </thead>
@@ -322,10 +322,10 @@ export class BackupCard extends LitElement {
               (b) => html`
                 <tr>
                   <td>${b.name}</td>
-                  <td>${b.automatic ? L("card.automatic") : L("card.manual")}</td>
                   <td title="${b.date}">${relativeTime(b.date)}</td>
-                  <td>${formatSize(b.size)}</td>
+                  <td>${formatMb(b.size)}</td>
                   <td>${(locationBadges(b.agent_ids)).map((l) => html`<span class="badge">${l}</span>`)}</td>
+                  <td>${b.automatic ? L("card.automatic") : L("card.manual")}</td>
                   ${this._isAdmin
                     ? html`<td>
                         <button class="link danger" @click="${() => (this._confirm = { kind: "restore", slug: b.slug, name: b.name })}">${L("card.restore")}</button>
@@ -345,7 +345,13 @@ export class BackupCard extends LitElement {
         </div>
 
         ${busy
-          ? html`<div class="overlay">${s.status === "restoring" ? L("card.restoring") : L("card.creating")}</div>`
+          ? html`<div class="overlay">${
+              s.status === "restoring"
+                ? L("card.restoring")
+                : s.status === "deleting"
+                  ? L("card.deleting")
+                  : L("card.creating")
+            }</div>`
           : ""}
       </ha-card>
 
@@ -423,7 +429,7 @@ export class BackupCard extends LitElement {
     .modal .primary, .overlay > div.primary { color: #fff; }
     @media (max-width: 480px) {
       .metrics { flex-direction: column; }
-      table th:nth-child(4), table td:nth-child(4) { display: none; }
+      table th:nth-child(3), table td:nth-child(3) { display: none; }
     }
   `;
 }
@@ -438,8 +444,7 @@ function relativeTime(iso: string): string {
   return `${Math.floor(d / 30)}mo ago`;
 }
 
-function formatSize(bytes: number): string {
-  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+function formatMb(bytes: number): string {
   return `${Math.round(bytes / 1024 ** 2)} MB`;
 }
 

@@ -64,7 +64,7 @@ export interface BackupInfo {
 }
 
 export interface CardState {
-  status: "idle" | "loading" | "ready" | "creating" | "restoring" | "error";
+  status: "idle" | "loading" | "ready" | "creating" | "restoring" | "deleting" | "error";
   error?: string;
   info?: BackupInfo;
   backups?: BackupEntry[];
