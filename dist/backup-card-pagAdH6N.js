@@ -913,7 +913,7 @@ let f = class extends O {
     s.has("hass") && this.hass && this._state.status === "idle" && this._load();
   }
   static async getConfigElement() {
-    return await import("./editor-D3Sl1EPU.js"), document.createElement("backup-card-editor");
+    return await import("./editor-H1nwsvyn.js"), document.createElement("backup-card-editor");
   }
   static getStubConfig() {
     return {};
@@ -1155,6 +1155,12 @@ let f = class extends O {
   }
 };
 f.styles = At`
+    :host {
+      display: block;
+      width: 100vw;
+      max-width: 100vw;
+      margin-left: calc(50% - 50vw);
+    }
     .header { display: flex; align-items: center; gap: 0.5rem; }
     .spacer { flex: 1; }
     .rag-red { color: var(--error-color); font-weight: 600; }

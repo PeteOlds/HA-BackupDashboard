@@ -404,6 +404,12 @@ export class BackupCard extends LitElement {
   }
 
   static styles = css`
+    :host {
+      display: block;
+      width: 100vw;
+      max-width: 100vw;
+      margin-left: calc(50% - 50vw);
+    }
     .header { display: flex; align-items: center; gap: 0.5rem; }
     .spacer { flex: 1; }
     .rag-red { color: var(--error-color); font-weight: 600; }
