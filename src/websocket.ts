@@ -4,6 +4,7 @@ import {
   BackupInfo,
   HomeAssistant,
   isLocalAgent,
+  LOCAL_AGENTS,
 } from "./types";
 
 // Shapes verified against HA frontend `src/data/backup.ts` (DESIGN.md §9).
@@ -16,7 +17,7 @@ export async function generateBackup(
 ): Promise<void> {
   await hass.callWS({
     type: "backup/generate",
-    agent_ids: opts.agentIds ?? ["backup.local"],
+    agent_ids: opts.agentIds && opts.agentIds.length ? opts.agentIds : LOCAL_AGENTS.slice(),
     name: opts.name,
     password: opts.password,
     include_homeassistant: true,

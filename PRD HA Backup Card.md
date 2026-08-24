@@ -133,7 +133,7 @@ Adapted from the project's developer guidelines (originally written for Python i
 - **Native core card** (home-assistant/frontend contribution) — explicitly not pursued; this is a HACS custom card.
 - **In-card schedule editing** (original REQ-ACT-02) — the backup schedule is a config-entry setting not exposed via a card-callable command; the card displays the schedule and deep-links to `/config/backup` instead.
 - **Visual config editor** — shipped in v2 (`<backup-card-editor>`); v1 was YAML-only.
-- **Move/Copy local backup to remote / "Create on Remote" (REQ-ACT-04)** — deferred to v2; HA has no copy-local→remote operation, and in-card remote generation is not in v1 scope. v1 reaches remote ops via the Open Location deep-link.
+- **Move/Copy local backup to remote / "Create on Remote" (REQ-ACT-04)** — shipped in v2: the Backup Now modal lists available agents (from `backup/agents/info`) so a backup can be generated directly onto a chosen local or remote agent.
 
 ## 11. Acceptance Criteria & Definition of Done
 

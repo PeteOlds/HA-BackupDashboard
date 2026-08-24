@@ -35,6 +35,8 @@
     "partial": "Partial backup",
     "password": "Password (optional)",
     "modal_title": "Backup Now",
+    "target": "Target location(s)",
+    "no_agents": "No backup agents available",
     "confirm": "Confirm",
     "confirm_msg": "This action cannot be undone. Are you sure?",
     "confirm_restore_title": "Restore backup",

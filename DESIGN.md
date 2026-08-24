@@ -108,7 +108,7 @@ Notes:
 | 01      | Backup Now         | `websocket.generateBackup` + card modal          | done                   |
 | 02      | View/Set Schedule  | card schedule display + `navigate` to `/config/backup` | done (read-only + deep-link) |
 | 03      | Delete Backup      | `websocket.deleteBackup` + `confirm-dialog`      | done                   |
-| 04      | Create on Remote   | —                                                | deferred to v2 (PRD §10) |
+| 04      | Create on Remote   | `websocket.generateBackup({ agentIds })` + agent selector in Backup Now modal | done (v2)            |
 | 05      | Restore Instance   | `websocket.restoreBackup` + `confirm-dialog`     | done                   |
 | 06      | Open Location      | `navigate` to `/config/backup`                   | done                   |
 | 07      | Config via UI      | `editor.ts` (`<backup-card-editor>`), `getConfigElement`/`getStubConfig` | done (v2)        |

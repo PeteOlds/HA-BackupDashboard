@@ -4,6 +4,7 @@ import {
   BackupCardConfig,
   BackupEntry,
   BackupInfo,
+  BackupAgent,
   CardState,
   RagStatus,
   RagThresholds,
@@ -17,6 +18,7 @@ import {
   generateBackup,
   deleteBackup,
   restoreBackup,
+  fetchAgentsInfo,
 } from "./websocket";
 import "./confirm-dialog";
 
@@ -46,6 +48,10 @@ export class BackupCard extends LitElement {
   @state() private _backupPartial = false;
 
   @state() private _backupPassword = "";
+
+  @state() private _agents: BackupAgent[] = [];
+
+  @state() private _backupAgentIds: string[] = [];
 
   private _pollTimer?: number;
 
@@ -174,14 +180,46 @@ export class BackupCard extends LitElement {
     this._page = 0;
   }
 
+  private _openBackupModal(): void {
+    this._backupModalOpen = true;
+    void this._loadAgents();
+  }
+
+  private async _loadAgents(): Promise<void> {
+    if (!this.hass) return;
+    try {
+      const agents = await fetchAgentsInfo(this.hass);
+      this._agents = agents;
+      if (this._backupAgentIds.length === 0) {
+        const local = agents.filter((a) => isLocalAgent(a.agent_id)).map((a) => a.agent_id);
+        this._backupAgentIds = local.length ? local : agents.length ? [agents[0].agent_id] : [];
+      }
+    } catch {
+      this._agents = [];
+    }
+  }
+
+  private _toggleAgent(id: string, checked: boolean): void {
+    const set = new Set(this._backupAgentIds);
+    if (checked) set.add(id);
+    else set.delete(id);
+    this._backupAgentIds = [...set];
+  }
+
+  private _closeBackupModal(): void {
+    this._backupModalOpen = false;
+    this._backupAgentIds = [];
+  }
+
   private async _doBackup(): Promise<void> {
     if (!this.hass) return;
     const partial = this._backupPartial;
     const password = this._backupPassword || undefined;
-    this._backupModalOpen = false;
+    const agentIds = this._backupAgentIds;
+    this._closeBackupModal();
     this._state = { ...this._state, status: "creating" };
     try {
-      await generateBackup(this.hass, { partial, password });
+      await generateBackup(this.hass, { partial, password, agentIds });
       const { info, backups } = await this._fetch();
       this._state = { status: "ready", info, backups, rag: computeRag(info, this._thresholds) };
     } catch (err) {
@@ -242,7 +280,7 @@ export class BackupCard extends LitElement {
           <h2>${this._config.name ?? L("card.title")}</h2>
           <div class="spacer"></div>
           ${this._isAdmin
-            ? html`              <button @click="${() => (this._backupModalOpen = true)}">${L("card.backup_now")}</button>
+            ? html`              <button @click="${() => this._openBackupModal()}">${L("card.backup_now")}</button>
                 <button @click="${() => this._navigate("/config/backup")}">${L("card.open_location")}</button>`
             : html`<span class="readonly">${L("card.readonly")}</span>`}
         </div>
@@ -319,8 +357,23 @@ export class BackupCard extends LitElement {
                 /> ${L("card.partial")}</label>
               <label>${L("card.password")}<input type="password" .value="${this._backupPassword}" @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"
                 /></label>
+              <div class="agents">
+                <span class="k">${L("card.target")}</span>
+                ${this._agents.length
+                  ? html`${this._agents.map(
+                      (a) => html`<label class="agent"
+                          ><input
+                            type="checkbox"
+                            .checked="${this._backupAgentIds.includes(a.agent_id)}"
+                            @change="${(e: Event) => this._toggleAgent(a.agent_id, (e.target as HTMLInputElement).checked)}"
+                          />
+                          ${a.name}</label
+                        >`,
+                    )}`
+                  : html`<span class="hint">${L("card.no_agents")}</span>`}
+              </div>
               <div class="actions">
-                <button @click="${() => (this._backupModalOpen = false)}">${L("card.cancel")}</button>
+                <button @click="${() => this._closeBackupModal()}">${L("card.cancel")}</button>
                 <button class="primary" @click="${() => void this._doBackup()}">${L("card.create")}</button>
               </div>
             </div>
