@@ -30,9 +30,10 @@ Lit re-renders.
 ## 3. Module breakdown
 - `src/backup-card.ts` — custom element registration, config parse, lifecycle, orchestration, render.
 - `src/types.ts` — `BackupCardConfig`, `BackupInfo`, `BackupEntry`, `RagStatus`, `RagThresholds`.
-- `src/websocket.ts` — typed wrappers + `subscribeBackupEvents()` (live updates).
+- `src/websocket.ts` — typed wrappers for `backup/*` websocket calls (`generateBackup`, `deleteBackup`, `restoreBackup`, `fetchAgentsInfo`, `getBackupInfo`).
 - `src/rag.ts` — pure `computeRag(info, thresholds)`; unit-tested, no HA dependency.
 - `src/confirm-dialog.ts` — reusable two-step confirm modal (Delete/Restore).
+- `src/editor.ts` — `LovelaceCardEditor` (`<backup-card-editor>`) for in-UI config.
 - `src/translations/en.json` — externalised strings.
 - `hacs.json`, `info.md`, `vite.config.ts`, `tsconfig.json` — packaging/build.
 
@@ -102,14 +103,20 @@ Notes:
 
 ## 10. Requirement Traceability
 
-| REQ-ACT | Requirement        | Design module / function                         | v1 status              |
+| REQ-ACT | Requirement        | Design module / function                         | Status                 |
 | ------- | ------------------ | ------------------------------------------------ | ---------------------- |
-| 01      | Backup Now         | `websocket.generateBackup`                       | WS layer done; UI pending |
-| 02      | View/Set Schedule  | card schedule display + `navigate` to `/config/backup` | UI pending (DESIGN §5.2/§6) |
-| 03      | Delete Backup      | `websocket.removeBackup` + `confirm-dialog`      | WS layer done; UI pending |
+| 01      | Backup Now         | `websocket.generateBackup` + card modal          | done                   |
+| 02      | View/Set Schedule  | card schedule display + `navigate` to `/config/backup` | done (read-only + deep-link) |
+| 03      | Delete Backup      | `websocket.deleteBackup` + `confirm-dialog`      | done                   |
 | 04      | Create on Remote   | —                                                | deferred to v2 (PRD §10) |
-| 05      | Restore Instance   | `websocket.restoreBackup` + `confirm-dialog`     | WS layer done; UI pending |
-| 06      | Open Location      | `navigate` to `/config/backup`                   | UI pending             |
+| 05      | Restore Instance   | `websocket.restoreBackup` + `confirm-dialog`     | done                   |
+| 06      | Open Location      | `navigate` to `/config/backup`                   | done                   |
+| 07      | Config via UI      | `editor.ts` (`<backup-card-editor>`), `getConfigElement`/`getStubConfig` | done (v2)        |
+| 08      | Externalised text  | `localize` + `translations/en.json`              | done                   |
 
-Telemetry (PRD §5.1) is served by `getBackupInfo`, `listBackups`, `listAgents`
+Live updates use background polling (`refresh_interval`, default 30s) via
+`setInterval` in `backup-card.ts`, not websocket subscription (the
+`backup/subscribe`/`backup/event` command was not verified against HA source).
+
+Telemetry (PRD §5.1) is served by `getBackupInfo`, `fetchAgentsInfo`
 and the pure `computeRag` engine.

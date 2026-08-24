@@ -91,6 +91,15 @@ export class BackupCard extends LitElement {
     }
   }
 
+  public static async getConfigElement(): Promise<HTMLElement> {
+    await import("./editor");
+    return document.createElement("backup-card-editor");
+  }
+
+  public static getStubConfig(): BackupCardConfig {
+    return {};
+  }
+
   private async _fetch(): Promise<{ info: BackupInfo; backups: BackupEntry[] }> {
     const { info, backups } = await getBackupInfo(this.hass!);
     return { info, backups };
@@ -394,4 +403,20 @@ declare global {
   interface HTMLElementTagNameMap {
     "backup-card": BackupCard;
   }
+  interface Window {
+    customCards?: {
+      type: string;
+      name: string;
+      description: string;
+      editor_type?: "custom" | "separate" | "none";
+    }[];
+  }
 }
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type: "backup-card",
+  name: "Backup Card",
+  description: "Monitor and manage Home Assistant backups from your dashboard.",
+  editor_type: "custom",
+});

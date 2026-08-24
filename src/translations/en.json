@@ -38,6 +38,15 @@
     "confirm": "Confirm",
     "confirm_msg": "This action cannot be undone. Are you sure?",
     "confirm_restore_title": "Restore backup",
-    "confirm_delete_title": "Delete backup"
+    "confirm_delete_title": "Delete backup",
+    "editor": {
+      "title": "Backup Card",
+      "name": "Title (optional)",
+      "refresh_interval": "Refresh interval (seconds, 0 to disable)",
+      "green_hours": "Green threshold (hours since last backup)",
+      "amber_days": "Amber threshold (days since last backup)",
+      "freegb": "Free-space warning (GB, 0 to ignore)",
+      "hint": "Leave a threshold blank to use the default. Changes apply when you save the card."
+    }
   }
 }

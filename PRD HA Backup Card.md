@@ -84,9 +84,9 @@ A clean, sortable table or list view rendering individual backup entries showing
 | **REQ-ACT-05**     | **Restore Instance**      | Triggers a system restore using the selected backup archive. Must use a strict two-step confirmation in-card (HA's native `confirm_restore` dialog is not callable from a custom card). | Calls websocket `backup/restore` with `backup_id` + `agent_id`; admin only.                                             |
 | **REQ-ACT-06**     | **Open Location**         | Direct navigation shortcut to the native HA Backup Management page.                                                            | Standard `navigate` action to `/config/backup`.                                                                           |
 
-### 5.3 Configuration (v1)
+### 5.3 Configuration
 
-The card is configured via **YAML only** in v1 (the visual config editor is deferred to v2). Supported options:
+The card can be configured via **YAML** or the **visual config editor** (added in v2 — select "Backup Card" in the card picker, or click the card's "Configure" button). Supported options:
 
 - `name` (optional): card title override.
 - `threshold_green_hours` (optional, default `48`): maximum age in hours for a Green RAG status.
@@ -132,7 +132,7 @@ Adapted from the project's developer guidelines (originally written for Python i
 
 - **Native core card** (home-assistant/frontend contribution) — explicitly not pursued; this is a HACS custom card.
 - **In-card schedule editing** (original REQ-ACT-02) — the backup schedule is a config-entry setting not exposed via a card-callable command; the card displays the schedule and deep-links to `/config/backup` instead.
-- **Visual config editor** — deferred to v2; v1 is YAML-configured only (see §5.3).
+- **Visual config editor** — shipped in v2 (`<backup-card-editor>`); v1 was YAML-only.
 - **Move/Copy local backup to remote / "Create on Remote" (REQ-ACT-04)** — deferred to v2; HA has no copy-local→remote operation, and in-card remote generation is not in v1 scope. v1 reaches remote ops via the Open Location deep-link.
 
 ## 11. Acceptance Criteria & Definition of Done
