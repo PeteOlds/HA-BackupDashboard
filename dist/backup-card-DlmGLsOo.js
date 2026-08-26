@@ -928,7 +928,7 @@ let f = class extends D {
     s.has("hass") && this.hass && this._state.status === "idle" && this._load();
   }
   static async getConfigElement() {
-    return await import("./editor-D9tXHJ6f.js"), document.createElement("backup-card-editor");
+    return await import("./editor-BQ3ZIPkd.js"), document.createElement("backup-card-editor");
   }
   static getStubConfig() {
     return {};
@@ -984,7 +984,7 @@ let f = class extends D {
       }
   }
   _navigate(s) {
-    window.dispatchEvent(
+    this.dispatchEvent(
       new CustomEvent("navigate", { detail: { path: s }, bubbles: !0, composed: !0 })
     );
   }
@@ -1109,6 +1109,9 @@ let f = class extends D {
           ${(y = s.config) != null && y.retention ? p`<div>
                 <span class="k">${t("card.retention")}</span>
                 <span>${be(s.config.retention)}</span>
+                ${this._isAdmin ? p`<button class="link" @click="${() => this._navigate("/config/backup")}"
+                      >${t("card.change")}</button
+                    >` : ""}
               </div>` : ""}
         </div>
 
@@ -1216,9 +1219,8 @@ let f = class extends D {
 f.styles = wt`
     :host {
       display: block;
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: calc(50% - 50vw);
+      width: 75%;
+      margin-inline: auto;
     }
     .header { display: flex; align-items: center; gap: 0.5rem; }
     .spacer { flex: 1; }

@@ -167,7 +167,7 @@ export class BackupCard extends LitElement {
   }
 
   private _navigate(path: string): void {
-    window.dispatchEvent(
+    this.dispatchEvent(
       new CustomEvent("navigate", { detail: { path }, bubbles: true, composed: true }),
     );
   }
@@ -343,6 +343,11 @@ export class BackupCard extends LitElement {
             ? html`<div>
                 <span class="k">${L("card.retention")}</span>
                 <span>${formatRetention(s.config.retention)}</span>
+                ${this._isAdmin
+                  ? html`<button class="link" @click="${() => this._navigate("/config/backup")}"
+                      >${L("card.change")}</button
+                    >`
+                  : ""}
               </div>`
             : ""}
         </div>
@@ -471,9 +476,8 @@ export class BackupCard extends LitElement {
   static styles = css`
     :host {
       display: block;
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: calc(50% - 50vw);
+      width: 75%;
+      margin-inline: auto;
     }
     .header { display: flex; align-items: center; gap: 0.5rem; }
     .spacer { flex: 1; }
