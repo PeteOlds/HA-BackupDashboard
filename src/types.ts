@@ -53,6 +53,15 @@ export interface BackupSchedule {
   next_run: string | null;
 }
 
+export interface BackupRetention {
+  copies: number | null;
+  days: number | null;
+}
+
+export interface BackupConfig {
+  retention: BackupRetention | null;
+}
+
 export interface BackupInfo {
   last_backup: string | null;
   last_job_failed: boolean;
@@ -68,5 +77,6 @@ export interface CardState {
   error?: string;
   info?: BackupInfo;
   backups?: BackupEntry[];
+  config?: BackupConfig;
   rag?: RagStatus;
 }

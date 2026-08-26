@@ -1,5 +1,6 @@
 import {
   BackupAgent,
+  BackupConfig,
   BackupEntry,
   BackupInfo,
   HomeAssistant,
@@ -65,6 +66,12 @@ export async function getBackupInfo(
   };
 }
 
+// REQ-ACT-02 — fetch backup retention/schedule config for display.
+export async function fetchConfigInfo(hass: HomeAssistant): Promise<BackupConfig> {
+  const data = await hass.callWS<any>({ type: "backup/config/info" });
+  return normaliseConfig(data);
+}
+
 function normaliseInfo(data: any): BackupInfo {
   const backups: any[] = Array.isArray(data?.backups) ? data.backups : [];
   const completed = data?.last_completed_automatic_backup ?? null;
@@ -107,5 +114,15 @@ function normaliseBackup(b: any): BackupEntry {
     size,
     agent_ids: Object.keys(agents),
     automatic: Boolean(b.with_automatic_settings),
+  };
+}
+
+function normaliseConfig(data: any): BackupConfig {
+  const config = data?.config ?? {};
+  const retention = config?.retention ?? null;
+  return {
+    retention: retention
+      ? { copies: retention.copies ?? null, days: retention.days ?? null }
+      : null,
   };
 }

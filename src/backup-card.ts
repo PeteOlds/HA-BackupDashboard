@@ -5,6 +5,8 @@ import {
   BackupEntry,
   BackupInfo,
   BackupAgent,
+  BackupConfig,
+  BackupRetention,
   CardState,
   RagStatus,
   RagThresholds,
@@ -19,6 +21,7 @@ import {
   deleteBackup,
   restoreBackup,
   fetchAgentsInfo,
+  fetchConfigInfo,
 } from "./websocket";
 import "./confirm-dialog";
 
@@ -52,6 +55,8 @@ export class BackupCard extends LitElement {
   @state() private _agents: BackupAgent[] = [];
 
   @state() private _backupAgentIds: string[] = [];
+
+  @state() private _banner: string | null = null;
 
   private _pollTimer?: number;
 
@@ -116,10 +121,19 @@ export class BackupCard extends LitElement {
     this._state = { ...this._state, status: "loading" };
     try {
       const { info, backups } = await this._fetch();
+      let config: BackupConfig | undefined;
+      if (this._isAdmin) {
+        try {
+          config = await fetchConfigInfo(this.hass);
+        } catch {
+          config = undefined;
+        }
+      }
       this._state = {
         status: "ready",
         info,
         backups,
+        config,
         rag: computeRag(info, this._thresholds),
       };
     } catch (err) {
@@ -153,7 +167,7 @@ export class BackupCard extends LitElement {
   }
 
   private _navigate(path: string): void {
-    this.dispatchEvent(
+    window.dispatchEvent(
       new CustomEvent("navigate", { detail: { path }, bubbles: true, composed: true }),
     );
   }
@@ -217,6 +231,7 @@ export class BackupCard extends LitElement {
     const password = this._backupPassword || undefined;
     const agentIds = this._backupAgentIds;
     this._closeBackupModal();
+    this._showBanner(localize("card.backup_started"));
     this._state = { ...this._state, status: "creating" };
     try {
       await generateBackup(this.hass, { partial, password, agentIds });
@@ -225,6 +240,13 @@ export class BackupCard extends LitElement {
     } catch (err) {
       this._setError(err);
     }
+  }
+
+  private _showBanner(msg: string): void {
+    this._banner = msg;
+    window.setTimeout(() => {
+      if (this._banner === msg) this._banner = null;
+    }, 3000);
   }
 
   private async _doConfirmedAction(): Promise<void> {
@@ -273,11 +295,14 @@ export class BackupCard extends LitElement {
 
     return html`
       <ha-card>
+        ${this._banner
+          ? html`<div class="banner">${this._banner}</div>`
+          : ""}
         <div class="header">
+          <h2>${this._config.name ?? L("card.title")}</h2>
           <span class="rag rag-${s.rag}" role="status" aria-live="polite"
             >${ragLabel(s.rag as RagStatus)}</span
           >
-          <h2>${this._config.name ?? L("card.title")}</h2>
           <div class="spacer"></div>
           ${this._isAdmin
             ? html`              <button @click="${() => this._openBackupModal()}">${L("card.backup_now")}</button>
@@ -286,10 +311,20 @@ export class BackupCard extends LitElement {
         </div>
 
         <div class="metrics">
-          <div><span class="k">${L("card.last_backup")}</span><span>${s.info.last_backup ?? L("card.na")}</span></div>
+          <div><span class="k">${L("card.last_backup")}</span><span>${
+            s.info.last_backup ? new Date(s.info.last_backup).toLocaleString() : L("card.na")
+          }</span></div>
           <div>
             <span class="k">${L("card.count")}</span
             ><span>${s.backups?.length ?? 0}</span>
+          </div>
+          <div>
+            <span class="k">${L("card.local_size")}</span>
+            <span>${formatMb(this._totalLocal(s.backups ?? []))}</span>
+          </div>
+          <div>
+            <span class="k">${L("card.remote_size")}</span>
+            <span>${formatMb(this._totalRemote(s.backups ?? []))}</span>
           </div>
           <div>
             <span class="k">${L("card.schedule")}</span>
@@ -304,6 +339,12 @@ export class BackupCard extends LitElement {
                 >`
               : ""}
           </div>
+          ${s.config?.retention
+            ? html`<div>
+                <span class="k">${L("card.retention")}</span>
+                <span>${formatRetention(s.config.retention)}</span>
+              </div>`
+            : ""}
         </div>
 
         <table>
@@ -359,21 +400,33 @@ export class BackupCard extends LitElement {
         ? html`<div class="overlay" @click="${(e: Event) => { if (e.target === e.currentTarget) this._backupModalOpen = false; }}">
             <div class="modal" role="dialog" aria-modal="true">
               <h3>${L("card.modal_title")}</h3>
-              <label><input type="checkbox" .checked="${this._backupPartial}" @change="${(e: Event) => (this._backupPartial = (e.target as HTMLInputElement).checked)}"
-                /> ${L("card.partial")}</label>
-              <label>${L("card.password")}<input type="password" .value="${this._backupPassword}" @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"
-                /></label>
+              <label class="row"
+                ><input
+                  type="checkbox"
+                  .checked="${this._backupPartial}"
+                  @change="${(e: Event) => (this._backupPartial = (e.target as HTMLInputElement).checked)}"
+                />
+                <span>${L("card.partial")}</span></label
+              >
+              <label class="field"
+                ><span class="k">${L("card.password")}</span
+                ><input
+                  type="password"
+                  .value="${this._backupPassword}"
+                  @input="${(e: Event) => (this._backupPassword = (e.target as HTMLInputElement).value)}"
+                /></label
+              >
               <div class="agents">
                 <span class="k">${L("card.target")}</span>
                 ${this._agents.length
                   ? html`${this._agents.map(
-                      (a) => html`<label class="agent"
+                      (a) => html`<label class="row agent"
                           ><input
                             type="checkbox"
                             .checked="${this._backupAgentIds.includes(a.agent_id)}"
                             @change="${(e: Event) => this._toggleAgent(a.agent_id, (e.target as HTMLInputElement).checked)}"
                           />
-                          ${a.name}</label
+                          <span>${a.name}</span></label
                         >`,
                     )}`
                   : html`<span class="hint">${L("card.no_agents")}</span>`}
@@ -403,6 +456,18 @@ export class BackupCard extends LitElement {
     return this._sortDir === "asc" ? "▲" : "▼";
   }
 
+  private _totalLocal(backups: BackupEntry[]): number {
+    return backups
+      .filter((b) => b.agent_ids.some((id) => isLocalAgent(id)))
+      .reduce((sum, b) => sum + b.size, 0);
+  }
+
+  private _totalRemote(backups: BackupEntry[]): number {
+    return backups
+      .filter((b) => b.agent_ids.some((id) => !isLocalAgent(id)))
+      .reduce((sum, b) => sum + b.size, 0);
+  }
+
   static styles = css`
     :host {
       display: block;
@@ -430,8 +495,12 @@ export class BackupCard extends LitElement {
     .pager { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
     .modal { background: var(--card-background-color); color: var(--primary-text-color); padding: 1rem 1.25rem; border-radius: 8px; display: flex; flex-direction: column; gap: 0.5rem; max-width: 90vw; }
-    .modal label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; }
+    .modal label { font-size: 0.85rem; }
+    .modal label.row { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; }
+    .modal label.field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .modal label.field input { width: 100%; box-sizing: border-box; padding: 0.4rem; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--card-background-color); color: var(--primary-text-color); }
     .actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+    .banner { background: var(--success-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 4px; margin-bottom: 0.5rem; }
     .modal .primary, .overlay > div.primary { color: #fff; }
     @media (max-width: 480px) {
       .metrics { flex-direction: column; }
@@ -452,6 +521,13 @@ function relativeTime(iso: string): string {
 
 function formatMb(bytes: number): string {
   return `${Math.round(bytes / 1024 ** 2)} MB`;
+}
+
+function formatRetention(r: BackupRetention): string {
+  if (r.copies != null && r.days != null) return `Keep ${r.copies} copies / ${r.days} days`;
+  if (r.copies != null) return `Keep ${r.copies} copies`;
+  if (r.days != null) return `Keep ${r.days} days`;
+  return "Unlimited";
 }
 
 function locationBadges(ids: string[]): string[] {
