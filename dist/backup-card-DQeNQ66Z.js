@@ -199,8 +199,8 @@ let T = class extends HTMLElement {
     if (i !== void 0 && this._$Em !== i) {
       const o = r.getPropertyOptions(i), l = typeof o.converter == "function" ? { fromAttribute: o.converter } : ((n = o.converter) == null ? void 0 : n.fromAttribute) !== void 0 ? o.converter : F;
       this._$Em = i;
-      const d = l.fromAttribute(e, o.type);
-      this[i] = (c = d != null ? d : (a = this._$Ej) == null ? void 0 : a.get(i)) != null ? c : d, this._$Em = null;
+      const h = l.fromAttribute(e, o.type);
+      this[i] = (c = h != null ? h : (a = this._$Ej) == null ? void 0 : a.get(i)) != null ? c : h, this._$Em = null;
     }
   }
   requestUpdate(t, e, r, i = !1, n) {
@@ -291,22 +291,22 @@ T.elementStyles = [], T.shadowRootOptions = { mode: "open" }, T[z("elementProper
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const N = globalThis, dt = (s) => s, Z = N.trustedTypes, ht = Z ? Z.createPolicy("lit-html", { createHTML: (s) => s }) : void 0, Et = "$lit$", k = `lit$${Math.random().toFixed(9).slice(2)}$`, St = "?" + k, jt = `<${St}>`, O = document, L = () => O.createComment(""), j = (s) => s === null || typeof s != "object" && typeof s != "function", nt = Array.isArray, It = (s) => nt(s) || typeof (s == null ? void 0 : s[Symbol.iterator]) == "function", X = `[ 	
+const N = globalThis, ht = (s) => s, Z = N.trustedTypes, dt = Z ? Z.createPolicy("lit-html", { createHTML: (s) => s }) : void 0, Et = "$lit$", k = `lit$${Math.random().toFixed(9).slice(2)}$`, St = "?" + k, jt = `<${St}>`, O = document, L = () => O.createComment(""), j = (s) => s === null || typeof s != "object" && typeof s != "function", nt = Array.isArray, It = (s) => nt(s) || typeof (s == null ? void 0 : s[Symbol.iterator]) == "function", X = `[ 	
 \f\r]`, H = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, ut = /-->/g, pt = />/g, E = RegExp(`>|${X}(?:([^\\s"'>=/]+)(${X}*=${X}*(?:[^ 	
 \f\r"'\`<>=]|("|')|))|$)`, "g"), _t = /'/g, ft = /"/g, xt = /^(?:script|style|textarea|title)$/i, Wt = (s) => (t, ...e) => ({ _$litType$: s, strings: t, values: e }), p = Wt(1), B = Symbol.for("lit-noChange"), _ = Symbol.for("lit-nothing"), gt = /* @__PURE__ */ new WeakMap(), S = O.createTreeWalker(O, 129);
 function Ct(s, t) {
   if (!nt(s) || !s.hasOwnProperty("raw")) throw Error("invalid template strings array");
-  return ht !== void 0 ? ht.createHTML(t) : t;
+  return dt !== void 0 ? dt.createHTML(t) : t;
 }
 const Gt = (s, t) => {
   const e = s.length - 1, r = [];
   let i, n = t === 2 ? "<svg>" : t === 3 ? "<math>" : "", a = H;
   for (let c = 0; c < e; c++) {
     const o = s[c];
-    let l, d, h = -1, g = 0;
-    for (; g < o.length && (a.lastIndex = g, d = a.exec(o), d !== null); ) g = a.lastIndex, a === H ? d[1] === "!--" ? a = ut : d[1] !== void 0 ? a = pt : d[2] !== void 0 ? (xt.test(d[2]) && (i = RegExp("</" + d[2], "g")), a = E) : d[3] !== void 0 && (a = E) : a === E ? d[0] === ">" ? (a = i != null ? i : H, h = -1) : d[1] === void 0 ? h = -2 : (h = a.lastIndex - d[2].length, l = d[1], a = d[3] === void 0 ? E : d[3] === '"' ? ft : _t) : a === ft || a === _t ? a = E : a === ut || a === pt ? a = H : (a = E, i = void 0);
+    let l, h, d = -1, g = 0;
+    for (; g < o.length && (a.lastIndex = g, h = a.exec(o), h !== null); ) g = a.lastIndex, a === H ? h[1] === "!--" ? a = ut : h[1] !== void 0 ? a = pt : h[2] !== void 0 ? (xt.test(h[2]) && (i = RegExp("</" + h[2], "g")), a = E) : h[3] !== void 0 && (a = E) : a === E ? h[0] === ">" ? (a = i != null ? i : H, d = -1) : h[1] === void 0 ? d = -2 : (d = a.lastIndex - h[2].length, l = h[1], a = h[3] === void 0 ? E : h[3] === '"' ? ft : _t) : a === ft || a === _t ? a = E : a === ut || a === pt ? a = H : (a = E, i = void 0);
     const m = a === E && s[c + 1].startsWith("/>") ? " " : "";
-    n += a === H ? o + jt : h >= 0 ? (r.push(l), o.slice(0, h) + Et + o.slice(h) + k + m) : o + k + (h === -2 ? c : m);
+    n += a === H ? o + jt : d >= 0 ? (r.push(l), o.slice(0, d) + Et + o.slice(d) + k + m) : o + k + (d === -2 ? c : m);
   }
   return [Ct(s, n + (s[e] || "<?>") + (t === 2 ? "</svg>" : t === 3 ? "</math>" : "")), r];
 };
@@ -315,29 +315,29 @@ class I {
     let i;
     this.parts = [];
     let n = 0, a = 0;
-    const c = t.length - 1, o = this.parts, [l, d] = Gt(t, e);
+    const c = t.length - 1, o = this.parts, [l, h] = Gt(t, e);
     if (this.el = I.createElement(l, r), S.currentNode = this.el.content, e === 2 || e === 3) {
-      const h = this.el.content.firstChild;
-      h.replaceWith(...h.childNodes);
+      const d = this.el.content.firstChild;
+      d.replaceWith(...d.childNodes);
     }
     for (; (i = S.nextNode()) !== null && o.length < c; ) {
       if (i.nodeType === 1) {
-        if (i.hasAttributes()) for (const h of i.getAttributeNames()) if (h.endsWith(Et)) {
-          const g = d[a++], m = i.getAttribute(h).split(k), y = /([.?@])?(.*)/.exec(g);
-          o.push({ type: 1, index: n, name: y[2], strings: m, ctor: y[1] === "." ? qt : y[1] === "?" ? Vt : y[1] === "@" ? Ft : J }), i.removeAttribute(h);
-        } else h.startsWith(k) && (o.push({ type: 6, index: n }), i.removeAttribute(h));
+        if (i.hasAttributes()) for (const d of i.getAttributeNames()) if (d.endsWith(Et)) {
+          const g = h[a++], m = i.getAttribute(d).split(k), y = /([.?@])?(.*)/.exec(g);
+          o.push({ type: 1, index: n, name: y[2], strings: m, ctor: y[1] === "." ? qt : y[1] === "?" ? Vt : y[1] === "@" ? Ft : J }), i.removeAttribute(d);
+        } else d.startsWith(k) && (o.push({ type: 6, index: n }), i.removeAttribute(d));
         if (xt.test(i.tagName)) {
-          const h = i.textContent.split(k), g = h.length - 1;
+          const d = i.textContent.split(k), g = d.length - 1;
           if (g > 0) {
             i.textContent = Z ? Z.emptyScript : "";
-            for (let m = 0; m < g; m++) i.append(h[m], L()), S.nextNode(), o.push({ type: 2, index: ++n });
-            i.append(h[g], L());
+            for (let m = 0; m < g; m++) i.append(d[m], L()), S.nextNode(), o.push({ type: 2, index: ++n });
+            i.append(d[g], L());
           }
         }
       } else if (i.nodeType === 8) if (i.data === St) o.push({ type: 2, index: n });
       else {
-        let h = -1;
-        for (; (h = i.data.indexOf(k, h + 1)) !== -1; ) o.push({ type: 7, index: n }), h += k.length - 1;
+        let d = -1;
+        for (; (d = i.data.indexOf(k, d + 1)) !== -1; ) o.push({ type: 7, index: n }), d += k.length - 1;
       }
       n++;
     }
@@ -371,8 +371,8 @@ class Kt {
     let n = S.nextNode(), a = 0, c = 0, o = r[0];
     for (; o !== void 0; ) {
       if (a === o.index) {
-        let d;
-        o.type === 2 ? d = new W(n, n.nextSibling, this, t) : o.type === 1 ? d = new o.ctor(n, o.name, o.strings, this, t) : o.type === 6 && (d = new Zt(n, this, t)), this._$AV.push(d), o = r[++c];
+        let h;
+        o.type === 2 ? h = new W(n, n.nextSibling, this, t) : o.type === 1 ? h = new o.ctor(n, o.name, o.strings, this, t) : o.type === 6 && (h = new Zt(n, this, t)), this._$AV.push(h), o = r[++c];
       }
       a !== (o == null ? void 0 : o.index) && (n = S.nextNode(), a++);
     }
@@ -438,8 +438,8 @@ class W {
   _$AR(t = this._$AA.nextSibling, e) {
     var r;
     for ((r = this._$AP) == null ? void 0 : r.call(this, !1, !0, e); t !== this._$AB; ) {
-      const i = dt(t).nextSibling;
-      dt(t).remove(), t = i;
+      const i = ht(t).nextSibling;
+      ht(t).remove(), t = i;
     }
   }
   setConnected(t) {
@@ -738,22 +738,22 @@ async function ce(s) {
 async function le(s) {
   const t = await s.callWS({ type: "backup/info" });
   return {
-    info: he(t),
+    info: de(t),
     backups: Array.isArray(t == null ? void 0 : t.backups) ? t.backups.map(ue) : []
   };
 }
-async function de(s) {
+async function he(s) {
   const t = await s.callWS({ type: "backup/config/info" });
   return pe(t);
 }
-function he(s) {
-  var h, g, m, y;
-  const t = Array.isArray(s == null ? void 0 : s.backups) ? s.backups : [], e = (h = s == null ? void 0 : s.last_completed_automatic_backup) != null ? h : null, r = (g = s == null ? void 0 : s.last_attempted_automatic_backup) != null ? g : null, i = e != null ? e : t.length ? t.map((u) => u.date).sort().slice(-1)[0] : null, n = !!r && (!e || new Date(r).getTime() > new Date(e).getTime()), a = (m = s == null ? void 0 : s.state) != null ? m : "idle", c = ["creating_backup", "receiving_backup", "restoring_backup"].includes(
+function de(s) {
+  var d, g, m, y;
+  const t = Array.isArray(s == null ? void 0 : s.backups) ? s.backups : [], e = (d = s == null ? void 0 : s.last_completed_automatic_backup) != null ? d : null, r = (g = s == null ? void 0 : s.last_attempted_automatic_backup) != null ? g : null, i = e != null ? e : t.length ? t.map((u) => u.date).sort().slice(-1)[0] : null, n = !!r && (!e || new Date(r).getTime() > new Date(e).getTime()), a = (m = s == null ? void 0 : s.state) != null ? m : "idle", c = ["creating_backup", "receiving_backup", "restoring_backup"].includes(
     a
   ), l = [...new Set(t.flatMap((u) => {
     var v;
     return Object.keys((v = u.agents) != null ? v : {});
-  }))].some((u) => !C(u)), d = t.some(
+  }))].some((u) => !C(u)), h = t.some(
     (u) => {
       var v;
       return Object.keys((v = u.agents) != null ? v : {}).some((Mt) => !C(Mt));
@@ -765,7 +765,7 @@ function he(s) {
     backing_up: c,
     schedule: { state: a, next_run: (y = s == null ? void 0 : s.next_automatic_backup) != null ? y : null },
     has_remote_agent: l,
-    remote_ok: d
+    remote_ok: h
   };
 }
 function ue(s) {
@@ -916,6 +916,10 @@ let f = class extends D {
     var s, t, e;
     return (e = (t = (s = this.hass) == null ? void 0 : s.user) == null ? void 0 : t.is_admin) != null ? e : !1;
   }
+  get _backupPath() {
+    var s, t;
+    return ((t = (s = this._config) == null ? void 0 : s.backup_path) == null ? void 0 : t.trim()) || "/config/backup/overview";
+  }
   get _thresholds() {
     var s, t, e, r, i, n;
     return {
@@ -928,7 +932,7 @@ let f = class extends D {
     s.has("hass") && this.hass && this._state.status === "idle" && this._load();
   }
   static async getConfigElement() {
-    return await import("./editor-BQ3ZIPkd.js"), document.createElement("backup-card-editor");
+    return await import("./editor-C9EciTFd.js"), document.createElement("backup-card-editor");
   }
   static getStubConfig() {
     return {};
@@ -945,7 +949,7 @@ let f = class extends D {
         let e;
         if (this._isAdmin)
           try {
-            e = await de(this.hass);
+            e = await he(this.hass);
           } catch {
             e = void 0;
           }
@@ -1059,7 +1063,7 @@ let f = class extends D {
     }
   }
   render() {
-    var c, o, l, d, h, g, m, y;
+    var c, o, l, h, d, g, m, y;
     if (!this._config) return p``;
     const s = this._state, t = P;
     if (s.status === "loading") return p`<p>${t("card.loading")}</p>`;
@@ -1080,18 +1084,18 @@ let f = class extends D {
           >
           <div class="spacer"></div>
           ${this._isAdmin ? p`              <button @click="${() => this._openBackupModal()}">${t("card.backup_now")}</button>
-                <button @click="${() => this._navigate("/config/backup")}">${t("card.open_location")}</button>` : p`<span class="readonly">${t("card.readonly")}</span>`}
+                <button @click="${() => this._navigate(this._backupPath)}">${t("card.open_location")}</button>` : p`<span class="readonly">${t("card.readonly")}</span>`}
         </div>
 
         <div class="metrics">
           <div><span class="k">${t("card.last_backup")}</span><span>${s.info.last_backup ? new Date(s.info.last_backup).toLocaleString() : t("card.na")}</span></div>
           <div>
             <span class="k">${t("card.count")}</span
-            ><span>${(d = (l = s.backups) == null ? void 0 : l.length) != null ? d : 0}</span>
+            ><span>${(h = (l = s.backups) == null ? void 0 : l.length) != null ? h : 0}</span>
           </div>
           <div>
             <span class="k">${t("card.local_size")}</span>
-            <span>${et(this._totalLocal((h = s.backups) != null ? h : []))}</span>
+            <span>${et(this._totalLocal((d = s.backups) != null ? d : []))}</span>
           </div>
           <div>
             <span class="k">${t("card.remote_size")}</span>
@@ -1102,14 +1106,14 @@ let f = class extends D {
             <span
               >${(m = s.info.schedule) != null && m.next_run ? `${t("card.next")}: ${new Date(s.info.schedule.next_run).toLocaleString()}` : t("card.na")}</span
             >
-            ${this._isAdmin ? p`<button class="link" @click="${() => this._navigate("/config/backup")}"
+            ${this._isAdmin ? p`<button class="link" @click="${() => this._navigate(this._backupPath)}"
                   >${t("card.change")}</button
                 >` : ""}
           </div>
           ${(y = s.config) != null && y.retention ? p`<div>
                 <span class="k">${t("card.retention")}</span>
                 <span>${be(s.config.retention)}</span>
-                ${this._isAdmin ? p`<button class="link" @click="${() => this._navigate("/config/backup")}"
+                ${this._isAdmin ? p`<button class="link" @click="${() => this._navigate(this._backupPath)}"
                       >${t("card.change")}</button
                     >` : ""}
               </div>` : ""}

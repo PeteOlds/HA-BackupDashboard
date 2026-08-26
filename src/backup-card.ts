@@ -88,6 +88,10 @@ export class BackupCard extends LitElement {
     return this.hass?.user?.is_admin ?? false;
   }
 
+  private get _backupPath(): string {
+    return this._config?.backup_path?.trim() || "/config/backup/overview";
+  }
+
   private get _thresholds(): RagThresholds {
     return {
       greenHours: this._config?.threshold_green_hours ?? DEFAULT_THRESHOLDS.greenHours,
@@ -306,7 +310,7 @@ export class BackupCard extends LitElement {
           <div class="spacer"></div>
           ${this._isAdmin
             ? html`              <button @click="${() => this._openBackupModal()}">${L("card.backup_now")}</button>
-                <button @click="${() => this._navigate("/config/backup")}">${L("card.open_location")}</button>`
+                <button @click="${() => this._navigate(this._backupPath)}">${L("card.open_location")}</button>`
             : html`<span class="readonly">${L("card.readonly")}</span>`}
         </div>
 
@@ -334,7 +338,7 @@ export class BackupCard extends LitElement {
                 : L("card.na")}</span
             >
             ${this._isAdmin
-              ? html`<button class="link" @click="${() => this._navigate("/config/backup")}"
+              ? html`<button class="link" @click="${() => this._navigate(this._backupPath)}"
                   >${L("card.change")}</button
                 >`
               : ""}
@@ -344,7 +348,7 @@ export class BackupCard extends LitElement {
                 <span class="k">${L("card.retention")}</span>
                 <span>${formatRetention(s.config.retention)}</span>
                 ${this._isAdmin
-                  ? html`<button class="link" @click="${() => this._navigate("/config/backup")}"
+                  ? html`<button class="link" @click="${() => this._navigate(this._backupPath)}"
                       >${L("card.change")}</button
                     >`
                   : ""}

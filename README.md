@@ -76,6 +76,7 @@ threshold_free_gb: 1
 | `threshold_amber_days` | 7       | Older than this (or >48h) are Red.           |
 | `threshold_free_gb`    | 1       | Free-storage check (currently inactive — see below). |
 | `refresh_interval`     | 60      | Polling interval in seconds.                 |
+| `backup_path`          | `/config/backup/overview` | Destination HA route for **Open Backup Manager** and the **Change** links. Override only if your HA instance serves backups at a different path. |
 
 > **Note:** the free-storage check is dormant. Home Assistant's `backup/info`
 > does not currently expose free space, so `threshold_free_gb` has no effect

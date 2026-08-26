@@ -17,6 +17,7 @@ export interface BackupCardConfig {
   threshold_amber_days?: number;
   threshold_free_gb?: number;
   refresh_interval?: number;
+  backup_path?: string;
 }
 
 export type RagStatus = "green" | "amber" | "red";

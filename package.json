@@ -1,6 +1,6 @@
 {
   "name": "lovelace-backup-card",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Home Assistant Lovelace card for backup status & management (HACS)",
   "type": "module",
   "main": "dist/backup-card.js",
